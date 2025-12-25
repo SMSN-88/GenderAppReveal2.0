@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Baby Reveal Word Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+   body {
+  font-family: Arial, sans-serif;
+  background: #f5f5f5; /* neutral background */
+  color: #333;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  color: #f8fafd;
+  text-align: center;
+}
+
+.subtitle {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.grid-wrapper {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid #cfe3fb;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(28px, 1fr));
+  gap: 4px;
+  touch-action: none; /* important for mobile drag */
+  user-select: none;
+}
+
+.cell {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  background: #fff;
+}
+
+.cell.highlight { background: #bbdefb; }
+.cell.found { background: #a5d6a7; }
+
+.sidebar {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid #cfe3fb;
+}
+
+.word-list {
+  margin-bottom: 10px;
+}
+
+.word-item {
+  margin: 4px 0;
+  padding: 4px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+}
+
+.word-item.found {
+  background: #e8f5e9;
+  border-color: #81c784;
+}
+
+.actions {
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-primary { background: #04070a; color: white; }
+.btn-secondary { background: #eee; }
+.reveal {
+  display: none;
+  margin-top: 12px;
+  font-size: 1.5em;
+  color: rgb(245, 13, 179);
+  font-weight: bold;
+  text-align: center;
+}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Baby {Insert Family name here} Reveal Word Search</h1>
+    <p class="subtitle">Find all the hidden words. When you’ve found them, the surprise appears with a burst of confetti!</p>
+  </header>
+
+  <div class="container">
+    <section class="grid-wrapper">
+      <div id="grid" class="grid" aria-label="Word search grid"></div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="panel-title">Words to find</div>
+      <div id="wordList" class="word-list" aria-label="Words to find"></div>
+
+      <div class="actions">
+        <button id="shuffleBtn" class="btn btn-secondary" type="button">Shuffle puzzle</button>
+        <button id="playAgainBtn" class="btn btn-primary" type="button" style="display:none;">Play Again</button>
+      </div>
+
+      <div id="reveal" class="reveal" role="status">
+        🎉 It’s a Girl! <span class="badge">Congrats!</span>
+      </div>
+    </aside>
+  </div>
+
+  <footer>Made with love and a little JavaScript ✨</footer>
+
+  <script>
+   const SIZE = 10;
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const WORDS = ["BABY","GIRL","BOY","LOVE","SMILE","BLUE","PINK","FAMILY","JOY","HOPE","CUTE"];
+
+const DIRECTIONS = [
+  [1,0],[-1,0],[0,1],[0,-1],
+  [1,1],[-1,-1],[1,-1],[-1,1]
+];
+
+const gridEl = document.getElementById("grid");
+const wordListEl = document.getElementById("wordList");
+const revealEl = document.getElementById("reveal");
+const shuffleBtn = document.getElementById("shuffleBtn");
+const playAgainBtn = document.getElementById("playAgainBtn");
+
+let board = [];
+let placements = [];
+let foundWords = new Set();
+
+let isSelecting = false;
+let startCell = null;
+let currentPath = [];
+
+// --- Board generation ---
+function randInt(n){ return Math.floor(Math.random()*n); }
+
+function makeEmptyBoard(){
+  board = Array.from({length:SIZE},()=>Array(SIZE).fill(""));
+}
+
+function canPlace(word,r,c,dx,dy){
+  const L = word.length;
+  const endR = r+dy*(L-1);
+  const endC = c+dx*(L-1);
+  if(endR<0||endR>=SIZE||endC<0||endC>=SIZE) return false;
+  for(let i=0;i<L;i++){
+    const rr=r+dy*i, cc=c+dx*i;
+    const ch=board[rr][cc];
+    if(ch!==""&&ch!==word[i]) return false;
+  }
+  return true;
+}
+
+function placeWord(word){
+  for(let t=0;t<200;t++){
+    const [dx,dy]=DIRECTIONS[randInt(DIRECTIONS.length)];
+    const r=randInt(SIZE), c=randInt(SIZE);
+    if(!canPlace(word,r,c,dx,dy)) continue;
+    const cells=[];
+    for(let i=0;i<word.length;i++){
+      const rr=r+dy*i, cc=c+dx*i;
+      board[rr][cc]=word[i];
+      cells.push({r:rr,c:cc,index:rr*SIZE+cc});
+    }
+    placements.push({word,cells});
+    return true;
+  }
+  return false;
+}
+
+function fillRandomLetters(){
+  for(let r=0;r<SIZE;r++){
+    for(let c=0;c<SIZE;c++){
+      if(board[r][c]==="") board[r][c]=LETTERS[randInt(LETTERS.length)];
+    }
+  }
+}
+
+function renderGrid(){
+  gridEl.innerHTML="";
+  for(let r=0;r<SIZE;r++){
+    for(let c=0;c<SIZE;c++){
+      const div=document.createElement("div");
+      div.className="cell";
+      div.textContent=board[r][c];
+      div.dataset.r=r;
+      div.dataset.c=c;
+      div.dataset.index=r*SIZE+c;
+      gridEl.appendChild(div);
+    }
+  }
+}
+
+function renderWordList(){
+  wordListEl.innerHTML="";
+  WORDS.forEach(w=>{
+    const item=document.createElement("div");
+    item.className="word-item";
+    item.textContent=w;
+    item.dataset.word=w;
+    wordListEl.appendChild(item);
+  });
+}
+
+// --- Game logic ---
+function markWordFound(word){
+  foundWords.add(word);
+  const placement=placements.find(p=>p.word===word);
+  if(placement){
+    placement.cells.forEach(cell=>{
+      const node=gridEl.children[cell.index];
+      node.classList.remove("highlight");
+      node.classList.add("found");
+    });
+  }
+  const listItem=wordListEl.querySelector(`[data-word="${word}"]`);
+  if(listItem) listItem.classList.add("found");
+
+  if(foundWords.size===WORDS.length){
+    triggerReveal();
+  }
+}
+
+function triggerReveal(){
+  revealEl.style.display="block";
+  playAgainBtn.style.display="inline-block";
+  const duration=2000;
+  const end=Date.now()+duration;
+  const defaults={startVelocity:32,spread:360,ticks:80,zIndex:9999,colors:['#E91E63','#E91E63','#F50057','#C51162']};
+  (function frame(){
+    confetti({...defaults,particleCount:30,origin:{x:0.2,y:0.6}});
+    confetti({...defaults,particleCount:30,origin:{x:0.8,y:0.6}});
+    if(Date.now()<end) requestAnimationFrame(frame);
+  })();
+}
+
+function resetSelectionVisuals(){
+  gridEl.querySelectorAll(".cell.highlight").forEach(n=>n.classList.remove("highlight"));
+}
+
+// --- Selection mechanics ---
+function buildPath(start,end){
+  const sr=parseInt(start.dataset.r), sc=parseInt(start.dataset.c);
+  const er=parseInt(end.dataset.r), ec=parseInt(end.dataset.c);
+  const dx=Math.sign(ec-sc), dy=Math.sign(er-sr);
+  if(!(dx===0||dy===0||Math.abs(dx)===Math.abs(dy))) return [];
+  const path=[];
+  let r=sr,c=sc;
+  while(true){
+    const idx=r*SIZE+c;
+    const node=gridEl.children[idx];
+    if(!node) break;
+    path.push(node);
+    if(r===er&&c===ec) break;
+    r+=dy; c+=dx;
+    if(r<0||r>=SIZE||c<0||c>=SIZE) break;
+  }
+  return path;
+}
+
+function highlightPath(path){
+  resetSelectionVisuals();
+  currentPath=path;
+  path.forEach(n=>n.classList.add("highlight"));
+}
+
+function pathToString(path){
+  return path.map(n=>n.textContent).join("");
+}
+
+function isWordInPlacements(word,path){
+  const indices=path.map(n=>parseInt(n.dataset.index));
+  for(const p of placements){
+    if(p.word!==word) continue;
+    const forward=p.cells.map(c=>c.index);
+    const reverse=[...forward].reverse();
+    const eqForward=forward.length===indices.length&&forward.every((v,i)=>v===indices[i]);
+    const eqReverse=reverse.length===indices.length&&reverse.every((v,i)=>v===indices[i]);
+    if(eqForward||eqReverse) return true;
+  }
+  return false;
+}
+
+function tryCommitSelection(){
+  if(currentPath.length===0) return;
+  const str=pathToString(currentPath);
+  const rev=str.split("").reverse().join("");
+  for(const w of WORDS){
+    if((str===w||rev===w)&&isWordInPlacements(w,currentPath)){
+      markWordFound(w);
+      break;
+    }
+  }
+  resetSelectionVisuals();
+}
+
+// --- Pointer events for mobile + desktop ---
+function getCellFromPoint(x,y){
+  const el=document.elementFromPoint(x,y);
+  return el&&el.classList.contains("cell")?el:null;
+}
+
+function onPointerDown(e){
+  e.preventDefault();
+  const targetCell=e.target.closest(".cell");
+  if(!targetCell) return;
+  isSelecting=true;
+  startCell=targetCell;
+  currentPath=[targetCell];
+  targetCell.classList.add("highlight");
+  gridEl.setPointerCapture?.(e.pointerId);
+}
+
+function onPointerMove(e){
+  if(!isSelecting||!startCell) return;
+  const cell=getCellFromPoint(e.clientX,e.clientY);
+  if(!cell) return;
+  const path=buildPath(startCell,cell);
+  if(path.length) highlightPath(path);
+}
+
+function onPointerUp(e){
+  if(!isSelecting) return;
+  gridEl.releasePointerCapture?.(e.pointerId);
+  tryCommitSelection();
+  isSelecting=false;
+  startCell=null;
+  currentPath=[];
+}
+
+// --- Setup ---
+function setupPuzzle(){
+  placements=[];
+  foundWords=new Set();
+  revealEl.style.display="none";
+  playAgainBtn.style.display="none";
+  makeEmptyBoard();
+  const shuffled=[...WORDS].sort(()=>Math.random()-0.5);
+  shuffled.forEach(word=>placeWord(word));
+  fillRandomLetters();
+  renderGrid();
+  renderWordList();
+}
+
+gridEl.addEventListener("pointerdown",onPointerDown,{passive:false});
+gridEl.addEventListener("pointermove",onPointerMove,{passive:false});
+window.addEventListener("pointerup",onPointerUp,{passive:false});
+window.addEventListener("pointercancel",onPointerUp,{passive:false});
+
+shuffleBtn.addEventListener("click",setupPuzzle);
+playAgainBtn.addEventListener("click",setupPuzzle);
+
+// Initialize
+setupPuzzle();
+  </script>
+</body>
+</html>
+
