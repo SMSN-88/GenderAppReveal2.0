@@ -1,0 +1,166 @@
+ :root {
+      --primary: #f4f6f7;       /* blue */
+      --accent: #64b5f6;        /* lighter blue */
+      --bg: #f4f9ff;            /* soft background */
+      --grid-border: #bcd7f5;
+      --text: #f2f6f8;
+      --found: #a5d6a7;         /* green for found words */
+      --highlight: #bbdefb;     /* light blue for selection */
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: linear-gradient(180deg, var(--bg), #ffffff);
+    }
+    header {
+      text-align: center;
+      padding: 24px 16px 12px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+    .subtitle {
+      margin: 0 auto;
+      max-width: 700px;
+      color: #456a88;
+    }
+    .container {
+      max-width: 980px;
+      margin: 20px auto 28px;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    /* Grid */
+    .grid-wrapper {
+      background: white;
+      border: 2px solid var(--grid-border);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(30, 136, 229, 0.08);
+      padding: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(24px, 1fr));
+      gap: 4px;
+      touch-action: none; /* smoother pointer interactions */
+      user-select: none;
+    }
+    .cell {
+      border: 1px solid #d7e6f8;
+      border-radius: 8px;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: clamp(14px, 3.5vw, 20px);
+      color: #124269;
+      background: #ffffff;
+      transition: background 120ms ease, transform 80ms ease;
+    }
+    .cell:hover { transform: translateY(-1px); }
+    .cell.highlight { background: var(--highlight); }
+    .cell.found { background: var(--found); color: #0f3d1c; }
+
+    /* Sidebar */
+    .sidebar {
+      background: white;
+      border: 2px solid var(--grid-border);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(30, 136, 229, 0.08);
+      padding: 16px;
+    }
+    .panel-title {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .word-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .word-item {
+      padding: 8px 10px;
+      border: 1px dashed #cfe3fb;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fbff;
+      color: #1a3e5c;
+      font-weight: 600;
+    }
+    .word-item.found {
+      background: #e8f5e9;
+      border-color: #b7deb8;
+      color: #10411d;
+    }
+
+    /* Actions */
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .btn {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: transform 80ms ease, box-shadow 120ms ease, background 140ms ease;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 6px 14px rgba(236, 35, 212, 0.25);
+    }
+    .btn-primary:hover { transform: translateY(-1px); }
+    .btn-secondary {
+      background: #eef6ff;
+      color: #f33ccb;
+      border: 1px solid #cfe3fb;
+    }
+
+    /* Reveal */
+    .reveal {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f4599f;
+      border: 2px solid #d348eb;
+      color: #df0cb2;
+      font-size: clamp(18px, 4vw, 28px);
+      font-weight: 800;
+    }
+    .badge {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 6px 10px;
+      background: #e33af3;
+      color: #f320e5;
+      border-radius: 999px;
+      font-size: 0.9em;
+      font-weight: 800;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px 16px 30px;
+      color: #ec42dd;
+    }
